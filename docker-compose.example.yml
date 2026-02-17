@@ -1,6 +1,6 @@
 services:
   redbark-actual-sync:
-    image: ghcr.io/redbark/actual-sync:latest
+    image: ghcr.io/redbark-co/actual-sync:latest
     # Or build locally:
     # build: .
     restart: "no"

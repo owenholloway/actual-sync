@@ -27,7 +27,7 @@ Supports all Redbark banking providers: Fiskil (AU), Akahu (NZ), SnapTrade (glob
 # List your Redbark accounts
 docker run --rm \
   -e REDBARK_API_KEY=rbk_live_... \
-  ghcr.io/redbark/actual-sync:latest \
+  ghcr.io/redbark-co/actual-sync:latest \
   --list-redbark-accounts
 
 # List your Actual Budget accounts
@@ -36,7 +36,7 @@ docker run --rm \
   -e ACTUAL_PASSWORD=your-password \
   -e ACTUAL_BUDGET_ID=your-budget-sync-id \
   -v actual-sync-data:/app/data \
-  ghcr.io/redbark/actual-sync:latest \
+  ghcr.io/redbark-co/actual-sync:latest \
   --list-actual-accounts
 ```
 
@@ -56,19 +56,19 @@ ACCOUNT_MAPPING=redbark-acc-id:actual-acc-id,redbark-acc-id-2:actual-acc-id-2
 # Preview first (no changes written)
 docker run --rm --env-file .env \
   -v actual-sync-data:/app/data \
-  ghcr.io/redbark/actual-sync:latest --dry-run
+  ghcr.io/redbark-co/actual-sync:latest --dry-run
 
 # Run for real
 docker run --rm --env-file .env \
   -v actual-sync-data:/app/data \
-  ghcr.io/redbark/actual-sync:latest
+  ghcr.io/redbark-co/actual-sync:latest
 ```
 
 ### 5. Schedule
 
 ```bash
 # Cron: sync every 6 hours
-0 */6 * * * docker run --rm --env-file /home/user/.redbark-sync.env -v actual-sync-data:/app/data ghcr.io/redbark/actual-sync:latest >> /var/log/redbark-sync.log 2>&1
+0 */6 * * * docker run --rm --env-file /home/user/.redbark-sync.env -v actual-sync-data:/app/data ghcr.io/redbark-co/actual-sync:latest >> /var/log/redbark-sync.log 2>&1
 ```
 
 ## Configuration
@@ -119,7 +119,7 @@ ACCOUNT_MAPPING=<redbark_id>:<actual_id>,<redbark_id>:<actual_id>
 docker run --rm \
   --env-file .env \
   -v actual-sync-data:/app/data \
-  ghcr.io/redbark/actual-sync:latest
+  ghcr.io/redbark-co/actual-sync:latest
 ```
 
 The `/app/data` volume caches the Actual Budget SQLite database locally. Mount a persistent volume so it doesn't re-download the full budget every run.
@@ -144,7 +144,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: sync
-              image: ghcr.io/redbark/actual-sync:latest
+              image: ghcr.io/redbark-co/actual-sync:latest
               envFrom:
                 - secretRef:
                     name: redbark-actual-sync-secrets
