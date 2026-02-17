@@ -1,5 +1,4 @@
-import { createRequire } from 'node:module'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
 import { logger } from './logger.js'
@@ -71,7 +70,8 @@ function downloadMatchingApi(
       dependencies: { '@actual-app/api': version },
     })
 
-    execSync(`echo '${pkgJson}' > package.json && npm install --no-audit --no-fund`, {
+    writeFileSync(join(pkgDir, 'package.json'), pkgJson)
+    execSync('npm install --no-audit --no-fund', {
       cwd: pkgDir,
       stdio: 'pipe',
       timeout: 120_000,
@@ -104,7 +104,7 @@ async function loadActualApi(
 
   if (serverVersion) {
     // Get bundled version for comparison
-    const require = createRequire(import.meta.url)
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const bundledPkg = require('@actual-app/api/package.json') as {
       version: string
     }
@@ -119,7 +119,6 @@ async function loadActualApi(
       const matchingPath = downloadMatchingApi(serverVersion, dataDir)
       if (matchingPath) {
         try {
-          const require = createRequire(import.meta.url)
           return require(matchingPath) as typeof import('@actual-app/api')
         } catch (error) {
           logger.warn(
