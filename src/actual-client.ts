@@ -4,6 +4,13 @@ import { execSync } from 'node:child_process'
 import { logger } from './logger.js'
 import type { ActualTransaction } from './transform.js'
 
+// Polyfill `navigator` for @actual-app/api v26.3.0 which references it in Node.js
+// See: https://github.com/actualbudget/actual/issues/7201
+if (typeof globalThis.navigator === 'undefined') {
+  // @ts-expect-error minimal polyfill for Node.js
+  globalThis.navigator = { userAgent: 'node' }
+}
+
 interface ActualConfig {
   serverUrl: string
   password: string
