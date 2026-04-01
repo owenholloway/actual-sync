@@ -4,6 +4,13 @@ import { execSync } from 'node:child_process'
 import { logger } from './logger.js'
 import type { ActualTransaction } from './transform.js'
 
+// Polyfill `navigator` for @actual-app/api v26.3.0 which references it in Node.js
+// See: https://github.com/actualbudget/actual/issues/7201
+if (typeof globalThis.navigator === 'undefined') {
+  // @ts-expect-error minimal polyfill for Node.js
+  globalThis.navigator = { userAgent: 'node' }
+}
+
 interface ActualConfig {
   serverUrl: string
   password: string
@@ -110,16 +117,7 @@ async function loadActualApi(
     }
     const bundledVersion = bundledPkg.version
 
-    // TODO: remove once 26.4.0 stable is released and we pin to it
-    // 26.3.0 has a Node.js-incompatible navigator bug (actualbudget/actual#7201)
-    const brokenVersions = ['26.3.0']
-
-    if (brokenVersions.includes(serverVersion)) {
-      logger.warn(
-        { serverVersion, bundledVersion },
-        'Server runs a version with known Node.js bugs, using bundled API instead'
-      )
-    } else if (serverVersion !== bundledVersion) {
+    if (serverVersion !== bundledVersion) {
       logger.info(
         { serverVersion, bundledVersion },
         'Actual Budget server version differs from bundled API'
