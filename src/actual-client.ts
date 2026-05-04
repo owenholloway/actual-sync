@@ -1,10 +1,11 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { execSync } from 'node:child_process'
 import { logger } from './logger.js'
 import type { ActualTransaction } from './transform.js'
 
-// Polyfill `navigator` for @actual-app/api v26.3.0 which references it in Node.js
+// Polyfill `navigator` for @actual-app/api which references it in Node.js
+// (still required as of 26.4 — see @actual-app/core/src/shared/platform.ts).
 // See: https://github.com/actualbudget/actual/issues/7201
 if (typeof globalThis.navigator === 'undefined') {
   // @ts-expect-error minimal polyfill for Node.js
@@ -101,6 +102,27 @@ function downloadMatchingApi(
 }
 
 /**
+ * Read the bundled @actual-app/api version from disk without importing
+ * `@actual-app/api/package.json`, which is blocked by the package exports map.
+ */
+function getBundledApiVersion(): string | null {
+  try {
+    const apiEntryPath = require.resolve('@actual-app/api')
+    const packageJsonPath = join(dirname(apiEntryPath), '..', 'package.json')
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      version?: string
+    }
+    return packageJson.version ?? null
+  } catch (error) {
+    logger.warn(
+      { error: String(error) },
+      'Failed to determine bundled @actual-app/api version'
+    )
+    return null
+  }
+}
+
+/**
  * Load the @actual-app/api module, optionally matching the server version.
  */
 async function loadActualApi(
@@ -110,14 +132,13 @@ async function loadActualApi(
   const serverVersion = await getServerVersion(serverUrl)
 
   if (serverVersion) {
-    // Get bundled version for comparison
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const bundledPkg = require('@actual-app/api/package.json') as {
-      version: string
-    }
-    const bundledVersion = bundledPkg.version
+    const bundledVersion = getBundledApiVersion()
 
-    if (serverVersion !== bundledVersion) {
+    if (!bundledVersion) {
+      logger.debug(
+        'Could not determine bundled @actual-app/api version, using bundled API'
+      )
+    } else if (serverVersion !== bundledVersion) {
       logger.info(
         { serverVersion, bundledVersion },
         'Actual Budget server version differs from bundled API'
